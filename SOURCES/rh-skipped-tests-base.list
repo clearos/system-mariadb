@@ -1,0 +1,5 @@
+# Disable innodb.innodb, which is showing platform-dependent results
+# as of 5.5.9.  Upstream at http://bugs.mysql.com/bug.php?id=60155
+
+innodb.innodb             : bug#60155 has platform-dependent results
+
