@@ -21,6 +21,8 @@ get_mysql_option mysqld datadir "/var/lib/mysql"
 datadir="$result"
 get_mysql_option mysqld_safe log-error "/var/log/mariadb/mariadb.log"
 errlogfile="$result"
+get_mysql_option mysqld socket "$datadir/mysql.sock"
+socketfile="$result"
 
 # Absorb configuration settings from the specified systemd service file,
 # or the default "mysqld" service if not specified
@@ -49,6 +51,16 @@ touch "$errlogfile"
 chown "$myuser:$mygroup" "$errlogfile"
 chmod 0640 "$errlogfile"
 [ -x /sbin/restorecon ] && /sbin/restorecon "$errlogfile"
+
+# We check if there is already a process using the socket file,
+# since otherwise this systemd service file could report false
+# positive result when starting and mysqld_safe could remove
+# a socket file, which actually uses a different daemon.
+if fuser "$socketfile" &>/dev/null ; then
+    echo "Socket file $socketfile exists." >&2
+    echo "Is another MySQL daemon already running with the same unix socket?" >&2
+    exit 1
+fi
 
 # Make the data directory
 if [ ! -d "$datadir/mysql" ] ; then

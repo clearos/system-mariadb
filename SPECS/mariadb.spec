@@ -3,7 +3,7 @@
 %bcond_with tokudb
 
 Name: mariadb
-Version: 5.5.33a
+Version: 5.5.35
 Release: 3%{?dist}
 Epoch: 1
 
@@ -15,6 +15,9 @@ URL: http://mariadb.org
 # Some innobase code from Percona and Google is under BSD license
 # Some code related to test-suite is under LGPLv2
 License: GPLv2 with exceptions and LGPLv2 and BSD
+
+# The evr of mysql we want to obsolete
+%global obsoleted_mysql_evr 5.5-0
 
 # Regression tests take a long time, you can skip 'em with this
 %{!?runselftest:%global runselftest 1}
@@ -32,6 +35,7 @@ Source12: mariadb-prepare-db-dir
 Source13: mariadb-wait-ready
 Source14: rh-skipped-tests-base.list
 Source15: rh-skipped-tests-arm.list
+Source16: README.mysql-cnf
 # Working around perl dependency checking bug in rpm FTTB. Remove later.
 Source999: filter-requires-mysql.sh
 
@@ -40,8 +44,6 @@ Patch1: mariadb-errno.patch
 Patch2: mariadb-strmov.patch
 Patch3: mariadb-install-test.patch
 Patch4: mariadb-expired-certs.patch
-Patch5: mariadb-versioning.patch
-Patch6: mariadb-dubious-exports.patch
 Patch7: mariadb-s390-tsc.patch
 Patch8: mariadb-logrotate.patch
 Patch9: mariadb-cipherspec.patch
@@ -51,7 +53,8 @@ Patch12: mariadb-dh1024.patch
 Patch14: mariadb-basedir.patch
 Patch17: mariadb-covscan-signexpr.patch
 Patch18: mariadb-covscan-stroverflow.patch
-Patch20: mariadb-cmakehostname.patch
+Patch19: mariadb-ssltest.patch
+Patch20: mariadb-versioning-compat.patch
 
 BuildRequires: perl, readline-devel, openssl-devel
 BuildRequires: cmake, ncurses-devel, zlib-devel, libaio-devel
@@ -73,6 +76,7 @@ Requires(postun): %{_sbindir}/update-alternatives
 # MariaDB replaces mysql packages
 Provides: mysql = %{epoch}:%{version}-%{release}
 Provides: mysql%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: mysql < %{obsoleted_mysql_evr}
 
 # When rpm 4.9 is universal, this could be cleaned up:
 %global __perl_requires %{SOURCE999}
@@ -96,6 +100,7 @@ Group: Applications/Databases
 Requires: /sbin/ldconfig
 Provides: mysql-libs = %{epoch}:%{version}-%{release}
 Provides: mysql-libs%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: mysql-libs < %{obsoleted_mysql_evr}
 
 %description libs
 The mariadb-libs package provides the essential shared libraries for any
@@ -121,6 +126,7 @@ Requires(postun): systemd %{_sbindir}/update-alternatives
 Requires: perl-DBI, perl-DBD-MySQL
 Provides: mysql-compat-server = %{epoch}:%{version}-%{release}
 Provides: mysql-compat-server%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: mysql-server < %{obsoleted_mysql_evr}
 
 %description server
 MariaDB is a multi-user, multi-threaded SQL database server. It is a
@@ -133,11 +139,11 @@ MariaDB is a community developed branch of MySQL.
 
 Summary: Files for development of MariaDB/MySQL applications
 Group: Applications/Databases
-Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-libs%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: openssl-devel%{?_isa}
 Provides: mysql-devel = %{epoch}:%{version}-%{release}
 Provides: mysql-devel%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: mysql-devel < %{obsoleted_mysql_evr}
 
 %description devel
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -150,6 +156,7 @@ MariaDB is a community developed branch of MySQL.
 Summary: MariaDB as an embeddable library
 Group: Applications/Databases
 Requires: /sbin/ldconfig
+Obsoletes: mysql-embedded < %{obsoleted_mysql_evr}
 
 %description embedded
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -163,6 +170,7 @@ Summary: Development files for MariaDB as an embeddable library
 Group: Applications/Databases
 Requires: %{name}-embedded%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: mysql-embedded-devel < %{obsoleted_mysql_evr}
 
 %description embedded-devel
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -175,6 +183,7 @@ MariaDB is a community developed branch of MySQL.
 Summary: MariaDB benchmark scripts and data
 Group: Applications/Databases
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: mysql-bench < %{obsoleted_mysql_evr}
 
 %description bench
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -191,6 +200,7 @@ Requires: %{name}-libs%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-server%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: perl(Socket), perl(Time::HiRes)
 Requires: perl(Data::Dumper), perl(Test::More), perl(Env)
+Obsoletes: mysql-test < %{obsoleted_mysql_evr}
 
 %description test
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -205,8 +215,6 @@ MariaDB is a community developed branch of MySQL.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
-%patch6 -p1
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
@@ -216,22 +224,20 @@ MariaDB is a community developed branch of MySQL.
 %patch14 -p1
 %patch17 -p1
 %patch18 -p1
+%patch19 -p1
 %patch20 -p1
 
 # workaround for upstream bug #56342
 rm -f mysql-test/t/ssl_8k_key-master.opt
 
-# upstream has fallen down badly on symbol versioning, do it ourselves
-cp -p %{SOURCE8} libmysql/libmysql.version
-
 # generate a list of tests that fail, but are not disabled by upstream
 cat %{SOURCE14} > mysql-test/rh-skipped-tests.list
 # disable some tests failing on ARM architectures
-%ifarch %{arm}
+%ifarch %{arm} aarch64
 cat %{SOURCE15} >> mysql-test/rh-skipped-tests.list
 %endif
 # disable some tests failing on ppc and s390
-%ifarch ppc ppc64 ppc64p7 s390 s390x
+%ifarch ppc ppc64 ppc64p7 s390 s390x aarch64
 echo "main.gis-precise : rhbz#906367" >> mysql-test/rh-skipped-tests.list
 %endif
 %ifarch i686
@@ -258,6 +264,11 @@ CFLAGS="$CFLAGS -fPIC"
 %ifarch sparc sparcv9 sparc64
 CFLAGS=`echo $CFLAGS| sed -e "s|-O2|-O1|g" `
 %endif
+# significant performance gains can be achieved by compiling with -O3 optimization
+# rhbz#1051069
+%ifarch ppc64
+CFLAGS=`echo $CFLAGS| sed -e "s|-O2|-O3|g" `
+%endif
 CXXFLAGS="$CFLAGS"
 export CFLAGS CXXFLAGS
 # building with PIE
@@ -270,7 +281,10 @@ export LDFLAGS
 cmake . -DBUILD_CONFIG=mysql_release \
 	-DFEATURE_SET="community" \
 	-DINSTALL_LAYOUT=RPM \
+	-DRPM="%{?rhel:rhel%{rhel}}%{!?rhel:fedora}" \
 	-DCMAKE_INSTALL_PREFIX="%{_prefix}" \
+	-DINSTALL_DOCDIR=share/doc/%{name}-%{version} \
+	-DINSTALL_DOCREADMEDIR=share/doc/%{name}-%{version} \
 	-DINSTALL_INCLUDEDIR=include/mysql \
 	-DINSTALL_INFODIR=share/info \
 	-DINSTALL_LIBDIR="%{_lib}/mysql" \
@@ -381,6 +395,7 @@ chmod 755 ${RPM_BUILD_ROOT}%{_bindir}/mysql_config
 # but that's pretty wacko --- see also mariadb-file-contents.patch)
 install -p -m 644 Docs/INFO_SRC ${RPM_BUILD_ROOT}%{_libdir}/mysql/
 install -p -m 644 Docs/INFO_BIN ${RPM_BUILD_ROOT}%{_libdir}/mysql/
+rm -rf ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/MariaDB-server-%{version}/
 
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/mariadb
 chmod 0750 $RPM_BUILD_ROOT%{_localstatedir}/log/mariadb
@@ -449,6 +464,8 @@ echo "%{_libdir}/mysql" > $RPM_BUILD_ROOT%{_sysconfdir}/ld.so.conf.d/%{name}-%{_
 # copy additional docs into build tree so %%doc will find them
 cp -p %{SOURCE6} README.mysql-docs
 cp -p %{SOURCE7} README.mysql-license
+cp -p %{SOURCE16} README.mysql-cnf
+install -p -m 0644 README.mysql-cnf ${RPM_BUILD_ROOT}%{_datadir}/mysql/README.mysql-cnf
 
 # install the list of skipped tests to be available for user runs
 install -p -m 0644 mysql-test/rh-skipped-tests.list ${RPM_BUILD_ROOT}%{_datadir}/mysql-test
@@ -478,7 +495,7 @@ rm -f ${RPM_BUILD_ROOT}%{_datadir}/mysql/solaris/postinstall-solaris
 /usr/sbin/useradd -M -N -g mysql -o -r -d %{_localstatedir}/lib/mysql -s /sbin/nologin \
 	-c "MariaDB Server" -u 27 mysql >/dev/null 2>&1 || :
 
-%post
+%post devel
 %{_sbindir}/update-alternatives --install %{_bindir}/mysql_config \
 	mysql_config %{_libdir}/mysql/mysql_config %{__isa_bits}
 
@@ -497,7 +514,7 @@ rm -f ${RPM_BUILD_ROOT}%{_datadir}/mysql/solaris/postinstall-solaris
 %preun server
 %systemd_preun mariadb.service
 
-%postun
+%postun devel
 if [ $1 -eq 0 ] ; then
 	%{_sbindir}/update-alternatives --remove mysql_config %{_libdir}/mysql/mysql_config
 fi
@@ -519,7 +536,6 @@ fi
 
 %{_bindir}/msql2mysql
 %{_bindir}/mysql
-%ghost %{_bindir}/mysql_config
 %{_bindir}/mysql_find_rows
 %{_bindir}/mysql_waitpid
 %{_bindir}/mysqlaccess
@@ -539,7 +555,6 @@ fi
 %{_bindir}/aria_read_log
 
 %{_mandir}/man1/mysql.1*
-%{_mandir}/man1/mysql_config.1*
 %{_mandir}/man1/mysql_find_rows.1*
 %{_mandir}/man1/mysql_waitpid.1*
 %{_mandir}/man1/mysqlaccess.1*
@@ -551,7 +566,6 @@ fi
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man8/mysqlmanager.8*
 
-%{_libdir}/mysql/mysql_config
 %config(noreplace) %{_sysconfdir}/my.cnf.d/client.cnf
 
 %files libs
@@ -593,8 +607,6 @@ fi
 %{_datadir}/mysql/charsets
 
 %files server
-%doc support-files/*.cnf
-
 %{_bindir}/myisamchk
 %{_bindir}/myisam_ftdump
 %{_bindir}/myisamlog
@@ -670,7 +682,8 @@ fi
 %{_datadir}/mysql/mysql_system_tables_data.sql
 %{_datadir}/mysql/mysql_test_data_timezone.sql
 %{_datadir}/mysql/mysql_performance_tables.sql
-%{_datadir}/mysql/my-*.cnf
+%doc %{_datadir}/mysql/my-*.cnf
+%doc %{_datadir}/mysql/README.mysql-cnf
 %{_datadir}/mysql/config.*.ini
 
 %{_unitdir}/mariadb.service
@@ -685,10 +698,13 @@ fi
 %config(noreplace) %{_sysconfdir}/logrotate.d/mariadb
 
 %files devel
+%ghost %{_bindir}/mysql_config
 %{_includedir}/mysql
 %{_datadir}/aclocal/mysql.m4
 %{_libdir}/mysql/libmysqlclient.so
 %{_libdir}/mysql/libmysqlclient_r.so
+%{_libdir}/mysql/mysql_config
+%{_mandir}/man1/mysql_config.1*
 
 %files embedded
 %doc README COPYING COPYING.LESSER README.mysql-license
@@ -713,6 +729,59 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Thu Mar 06 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.35-3
+- Fix a typo in last commit
+  Related: #1069586
+
+* Wed Feb 26 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.35-2
+- Remove unnecessary pid guessing and include README for included cnf files
+  Resolves: #1069586
+
+* Thu Jan 30 2014 Honza Horak <hhorak@redhat.com> 5.5.35-1
+- Rebase to 5.5.35
+  https://kb.askmonty.org/en/mariadb-5535-changelog/
+  Also fixes: CVE-2014-0001, CVE-2014-0412, CVE-2014-0437, CVE-2013-5908,
+  CVE-2014-0420, CVE-2014-0393, CVE-2013-5891, CVE-2014-0386, CVE-2014-0401,
+  CVE-2014-0402
+  Resolves: #1054041
+
+* Fri Jan 24 2014 Daniel Mach <dmach@redhat.com> - 1:5.5.34-6
+- Mass rebuild 2014-01-24
+
+* Tue Jan 14 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.34-5
+- Adopt compatible system versioning
+  Resolves: #1045013
+
+* Mon Jan 13 2014 Honza Horak <hhorak@redhat.com> 1:5.5.34-4
+- Fix alternatives calls for mysql_config
+  Related: #1050920
+
+* Fri Jan 10 2014 Honza Horak <hhorak@redhat.com> 1:5.5.34-3
+- Clean all non-needed doc files properly
+  Related: #1044532
+- Disable main.gis-precise test also for AArch64
+  Disable perfschema.func_file_io and perfschema.func_mutex for AArch64
+  (like it is done for 32-bit ARM)
+  Resolves: #1050988
+- Build with -O3 on ppc64 (disabling innodb_prefix_index_restart_server)
+  Related: #1051069
+- Move mysql_config to -devel sub-package and remove Require: mariadb
+  Resolves: #1050920
+
+* Tue Jan  7 2014 Honza Horak <hhorak@redhat.com> 1:5.5.34-1
+- Rebase to 5.5.34
+- Obsolete mysql packages
+  Resolves: #1043971
+- Don't test EDH-RSA-DES-CBC-SHA cipher, it seems to be removed from openssl
+  which now makes mariadb/mysql FTBFS because openssl_1 test fails
+  Resolves: #1048881
+- Check if socket file is not being used by another process at a time
+  of starting the service
+  Resolves: #1045435
+
+* Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 1:5.5.33a-4
+- Mass rebuild 2013-12-27
+
 * Mon Nov  4 2013 Honza Horak <hhorak@redhat.com> 1:5.5.33a-3
 - Check if correct process is running in mysql-wait-ready script
   Resolves: #1026313
