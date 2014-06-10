@@ -3,8 +3,8 @@
 %bcond_with tokudb
 
 Name: mariadb
-Version: 5.5.35
-Release: 3%{?dist}
+Version: 5.5.37
+Release: 1%{?dist}
 Epoch: 1
 
 Summary: A community developed branch of MySQL
@@ -43,7 +43,6 @@ Source999: filter-requires-mysql.sh
 Patch1: mariadb-errno.patch
 Patch2: mariadb-strmov.patch
 Patch3: mariadb-install-test.patch
-Patch4: mariadb-expired-certs.patch
 Patch7: mariadb-s390-tsc.patch
 Patch8: mariadb-logrotate.patch
 Patch9: mariadb-cipherspec.patch
@@ -54,7 +53,7 @@ Patch14: mariadb-basedir.patch
 Patch17: mariadb-covscan-signexpr.patch
 Patch18: mariadb-covscan-stroverflow.patch
 Patch19: mariadb-ssltest.patch
-Patch20: mariadb-versioning-compat.patch
+Patch20: mariadb-symbols-versioning.patch
 
 BuildRequires: perl, readline-devel, openssl-devel
 BuildRequires: cmake, ncurses-devel, zlib-devel, libaio-devel
@@ -214,7 +213,6 @@ MariaDB is a community developed branch of MySQL.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
-%patch4 -p1
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
@@ -729,6 +727,13 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Mon May 26 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.37-1
+- Rebase to 5.5.37
+  https://kb.askmonty.org/en/mariadb-5537-changelog/
+  Also fixes: CVE-2014-2440 CVE-2014-0384 CVE-2014-2432 CVE-2014-2431
+  CVE-2014-2430 CVE-2014-2436 CVE-2014-2438 CVE-2014-2419
+  Resolves: #1101062
+
 * Thu Mar 06 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.35-3
 - Fix a typo in last commit
   Related: #1069586

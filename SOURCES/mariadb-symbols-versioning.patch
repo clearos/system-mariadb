@@ -1,0 +1,19 @@
+After upstream started to provide a compatible symbol versioning, we are free
+to use their versioning scripts.
+
+However, we are still missing symbol my_progname, which is not exported
+in upstream scripts yet.
+
+Upstream bug: https://mariadb.atlassian.net/browse/MDEV-6273
+
+diff -up mariadb-5.5.37/libmysql/CMakeLists.txt.symbols mariadb-5.5.37/libmysql/CMakeLists.txt
+--- mariadb-5.5.37/libmysql/CMakeLists.txt.symbols	2014-05-26 18:37:22.109316009 +0200
++++ mariadb-5.5.37/libmysql/CMakeLists.txt	2014-05-26 18:37:42.457338366 +0200
+@@ -138,6 +138,7 @@ my_print_help
+ )
+ 
+ SET(CLIENT_API_FUNCTIONS_5_5
++my_progname
+ mysql_stmt_next_result
+ # Client plugins
+ mysql_client_find_plugin
