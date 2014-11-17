@@ -3,7 +3,7 @@
 %bcond_with tokudb
 
 Name: mariadb
-Version: 5.5.37
+Version: 5.5.40
 Release: 1%{?dist}
 Epoch: 1
 
@@ -53,7 +53,7 @@ Patch14: mariadb-basedir.patch
 Patch17: mariadb-covscan-signexpr.patch
 Patch18: mariadb-covscan-stroverflow.patch
 Patch19: mariadb-ssltest.patch
-Patch20: mariadb-symbols-versioning.patch
+#Patch20: mariadb-symbols-versioning.patch
 
 BuildRequires: perl, readline-devel, openssl-devel
 BuildRequires: cmake, ncurses-devel, zlib-devel, libaio-devel
@@ -223,7 +223,7 @@ MariaDB is a community developed branch of MySQL.
 %patch17 -p1
 %patch18 -p1
 %patch19 -p1
-%patch20 -p1
+#%patch20 -p1
 
 # workaround for upstream bug #56342
 rm -f mysql-test/t/ssl_8k_key-master.opt
@@ -415,7 +415,7 @@ mkdir -p $RPM_BUILD_ROOT%{_tmpfilesdir}
 install -p -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_tmpfilesdir}/%{name}.conf
 
 # Fix funny permissions that cmake build scripts apply to config files
-chmod 644 ${RPM_BUILD_ROOT}%{_datadir}/mysql/config.*.ini
+#chmod 644 ${RPM_BUILD_ROOT}%{_datadir}/mysql/config.*.ini
 
 # Fix scripts for multilib safety
 mv ${RPM_BUILD_ROOT}%{_bindir}/mysql_config ${RPM_BUILD_ROOT}%{_libdir}/mysql/mysql_config
@@ -561,8 +561,13 @@ fi
 %{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlslap.1*
 %{_mandir}/man1/my_print_defaults.1*
-%{_mandir}/man1/mysql_fix_privilege_tables.1*
-%{_mandir}/man8/mysqlmanager.8*
+#%{_mandir}/man1/mysql_fix_privilege_tables.1*
+#%{_mandir}/man8/mysqlmanager.8*
+%{_mandir}/man1/aria_chk.1.gz
+%{_mandir}/man1/aria_dump_log.1.gz
+%{_mandir}/man1/aria_ftdump.1.gz
+%{_mandir}/man1/aria_pack.1.gz
+%{_mandir}/man1/aria_read_log.1.gz
 
 %config(noreplace) %{_sysconfdir}/my.cnf.d/client.cnf
 
@@ -663,7 +668,7 @@ fi
 %{_mandir}/man1/mysqld_safe.1*
 %{_mandir}/man1/mysqlhotcopy.1*
 %{_mandir}/man1/mysqlimport.1*
-%{_mandir}/man1/mysqlman.1*
+#%{_mandir}/man1/mysqlman.1*
 %{_mandir}/man1/mysql_setpermission.1*
 %{_mandir}/man1/mysqltest.1*
 %{_mandir}/man1/innochecksum.1*
@@ -682,7 +687,7 @@ fi
 %{_datadir}/mysql/mysql_performance_tables.sql
 %doc %{_datadir}/mysql/my-*.cnf
 %doc %{_datadir}/mysql/README.mysql-cnf
-%{_datadir}/mysql/config.*.ini
+#%{_datadir}/mysql/config.*.ini
 
 %{_unitdir}/mariadb.service
 %{_libexecdir}/mariadb-prepare-db-dir
@@ -727,6 +732,13 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Thu Nov 06 2014 Matej Muzila <mmuzila@redhat.com> - 1:5.5.40-1
+- Rebase to 5.5.40
+  Also fixes: CVE-2014-4274 CVE-2014-4287 CVE-2014-6463 CVE-2014-6464
+  CVE-2014-6469 CVE-2014-6484 CVE-2014-6505 CVE-2014-6507 CVE-2014-6520
+  CVE-2014-6530 CVE-2014-6551 CVE-2014-6555 CVE-2014-6559 CVE-2014-6564
+  Resolves: #1160548
+
 * Mon May 26 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.37-1
 - Rebase to 5.5.37
   https://kb.askmonty.org/en/mariadb-5537-changelog/
