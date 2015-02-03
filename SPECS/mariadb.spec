@@ -3,7 +3,7 @@
 %bcond_with tokudb
 
 Name: mariadb
-Version: 5.5.40
+Version: 5.5.41
 Release: 2%{?dist}
 Epoch: 1
 
@@ -45,7 +45,7 @@ Patch2: mariadb-strmov.patch
 Patch3: mariadb-install-test.patch
 Patch7: mariadb-s390-tsc.patch
 Patch8: mariadb-logrotate.patch
-Patch9: mariadb-cipherspec.patch
+Patch9: mariadb-cipherreplace.patch
 Patch10: mariadb-file-contents.patch
 Patch11: mariadb-string-overflow.patch
 Patch12: mariadb-dh1024.patch
@@ -55,6 +55,7 @@ Patch18: mariadb-covscan-stroverflow.patch
 Patch19: mariadb-ssltest.patch
 #Patch20: mariadb-symbols-versioning.patch
 Patch21: mariadb-headerfile.patch
+Patch22: mariadb-expired-certs.patch
 
 BuildRequires: perl, readline-devel, openssl-devel
 BuildRequires: cmake, ncurses-devel, zlib-devel, libaio-devel
@@ -225,7 +226,8 @@ MariaDB is a community developed branch of MySQL.
 %patch18 -p1
 %patch19 -p1
 #%patch20 -p1
-%patch21 -p1
+#%patch21 -p1
+%patch22 -p1
 
 # workaround for upstream bug #56342
 rm -f mysql-test/t/ssl_8k_key-master.opt
@@ -734,6 +736,16 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Thu Jan 29 2015 Honza Horak <hhorak@redhat.com> - 1:5.5.41-2
+- Include new certificate for tests
+  Resolves: #1186109
+
+* Tue Jan 27 2015 Matej Muzila <mmuzila@redhat.com> - 1:5.5.41-1
+- Rebase to 5.5.41
+  Also fix: CVE-2014-6568 CVE-2015-0374 CVE-2015-0381 CVE-2015-0382
+  CVE-2015-0391 CVE-2015-0411 CVE-2015-0432
+  Resolves: #1186109
+
 * Tue Dec 30 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.40-2
 - Fix header to let dependencies to build fine
   Resolves: #1177836
