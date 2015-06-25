@@ -1,0 +1,17 @@
+/var/log/system-mariadb/mariadb.log {
+    create 640 system-mysql system-mysql
+    notifempty
+    daily
+    rotate 3
+    missingok
+    compress
+    postrotate
+    # just if mysqld is really running
+    if test -x /usr/clearos/sandbox/usr/bin/mysqladmin && \
+        test -e /var/clearos/system_database/root && \
+        /usr/clearos/sandbox/usr/bin/mysqladmin -uroot -p"`cat /var/clearos/system_database/root | awk '{ print $3 }'`" ping &>/dev/null
+    then
+        /usr/clearos/sandbox/usr/bin/mysqladmin -uroot -p"`cat /var/clearos/system_database/root | awk '{ print $3 }'`" flush-logs
+    fi
+    endscript
+}
