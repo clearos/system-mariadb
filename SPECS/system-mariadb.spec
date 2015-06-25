@@ -467,6 +467,11 @@ rm -f ${RPM_BUILD_ROOT}%{_datadir}/mysql/mysql.server
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/mysql/mysqld_multi.server
 rm -f ${RPM_BUILD_ROOT}%{_mandir}/man1/mysql-stress-test.pl.1*
 rm -f ${RPM_BUILD_ROOT}%{_mandir}/man1/mysql-test-run.pl.1*
+rm -f ${RPM_BUILD_ROOT}%{_mandir}/man1/aria_chk.1*
+rm -f ${RPM_BUILD_ROOT}%{_mandir}/man1/aria_dump_log.1*
+rm -f ${RPM_BUILD_ROOT}%{_mandir}/man1/aria_ftdump.1*
+rm -f ${RPM_BUILD_ROOT}%{_mandir}/man1/aria_pack.1*
+rm -f ${RPM_BUILD_ROOT}%{_mandir}/man1/aria_read_log.1*
 rm -f ${RPM_BUILD_ROOT}%{_bindir}/mytop
 
 # put logrotate script where it needs to be
