@@ -584,11 +584,11 @@ rm -f ${RPM_BUILD_ROOT}%{_datadir}/mysql/solaris/postinstall-solaris
 %{_mandir}/man1/my_print_defaults.1*
 #%{_mandir}/man1/mysql_fix_privilege_tables.1*
 #%{_mandir}/man8/mysqlmanager.8*
-%{_mandir}/man1/aria_chk.1.gz
-%{_mandir}/man1/aria_dump_log.1.gz
-%{_mandir}/man1/aria_ftdump.1.gz
-%{_mandir}/man1/aria_pack.1.gz
-%{_mandir}/man1/aria_read_log.1.gz
+#%{_mandir}/man1/aria_chk.1.gz
+#%{_mandir}/man1/aria_dump_log.1.gz
+#%{_mandir}/man1/aria_ftdump.1.gz
+#%{_mandir}/man1/aria_pack.1.gz
+#%{_mandir}/man1/aria_read_log.1.gz
 
 %config(noreplace) %{_sysconfdir}/my.cnf.d/client.cnf
 
