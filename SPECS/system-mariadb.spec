@@ -1,8 +1,18 @@
+%define sandbox /usr/clearos/sandbox
+
+%define _prefix %{sandbox}/usr
+%define _exec_prefix %{_prefix}
+%define _datadir %{sandbox}/usr/share
+%define _libdir %{sandbox}/usr/%{_lib}
+%define _libexecdir %{sandbox}/usr/libexec
+%define _includedir %{sandbox}/usr/include
+%define _sysconfdir %{sandbox}/etc
+
 # TokuDB engine is now part of MariaDB, but it is available only for x86_64;
 # variable tokudb allows to build with TokuDB storage engine
 %bcond_with tokudb
 
-Name: mariadb
+Name: system-mariadb
 Version: 5.5.37
 Release: 1%{?dist}
 Epoch: 1
@@ -17,25 +27,26 @@ URL: http://mariadb.org
 License: GPLv2 with exceptions and LGPLv2 and BSD
 
 # The evr of mysql we want to obsolete
-%global obsoleted_mysql_evr 5.5-0
+#% global obsoleted_mysql_evr 5.5-0
 
 # Regression tests take a long time, you can skip 'em with this
-%{!?runselftest:%global runselftest 1}
+%{!?runselftest:%global runselftest 0}
 
 Source0: http://ftp.osuosl.org/pub/mariadb/mariadb-%{version}/kvm-tarbake-jaunty-x86/mariadb-%{version}.tar.gz
-Source3: my.cnf
+Source3: system-my.cnf
 Source5: my_config.h
 Source6: README.mysql-docs
 Source7: README.mysql-license
 Source8: libmysql.version
 Source9: mysql-embedded-check.c
-Source10: mariadb.tmpfiles.d
-Source11: mariadb.service
-Source12: mariadb-prepare-db-dir
-Source13: mariadb-wait-ready
+Source10: system-mariadb.tmpfiles.d
+Source11: system-mariadb.service
+Source12: system-mariadb-prepare-db-dir
+Source13: system-mariadb-wait-ready
 Source14: rh-skipped-tests-base.list
 Source15: rh-skipped-tests-arm.list
 Source16: README.mysql-cnf
+Source100: system-mariadb.logrotate
 # Working around perl dependency checking bug in rpm FTTB. Remove later.
 Source999: filter-requires-mysql.sh
 
@@ -67,15 +78,15 @@ BuildRequires: perl(Data::Dumper), perl(Test::More), perl(Env)
 
 Requires: %{name}-libs%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: grep, fileutils, bash
-Requires(post): %{_sbindir}/update-alternatives
-Requires(postun): %{_sbindir}/update-alternatives
+#Requires(post): %{_sbindir}/update-alternatives
+#Requires(postun): %{_sbindir}/update-alternatives
 
 %{?systemd_requires: %systemd_requires}
 
 # MariaDB replaces mysql packages
-Provides: mysql = %{epoch}:%{version}-%{release}
-Provides: mysql%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: mysql < %{obsoleted_mysql_evr}
+Provides: system-mysql = %{epoch}:%{version}-%{release}
+Provides: system-mysql%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: system-mysql
 
 # When rpm 4.9 is universal, this could be cleaned up:
 %global __perl_requires %{SOURCE999}
@@ -97,9 +108,9 @@ contains the standard MariaDB/MySQL client programs and generic MySQL files.
 Summary: The shared libraries required for MariaDB/MySQL clients
 Group: Applications/Databases
 Requires: /sbin/ldconfig
-Provides: mysql-libs = %{epoch}:%{version}-%{release}
-Provides: mysql-libs%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: mysql-libs < %{obsoleted_mysql_evr}
+Provides: system-mysql-libs = %{epoch}:%{version}-%{release}
+Provides: system-mysql-libs%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: system-mysql-libs
 
 %description libs
 The mariadb-libs package provides the essential shared libraries for any
@@ -118,14 +129,14 @@ Requires(pre): /usr/sbin/useradd
 # We require this to be present for %%{_tmpfilesdir}
 Requires: systemd
 # Make sure it's there when scriptlets run, too
-Requires(post): systemd %{_sbindir}/update-alternatives
+Requires(post): systemd
 Requires(preun): systemd
-Requires(postun): systemd %{_sbindir}/update-alternatives
+Requires(postun): systemd
 # mysqlhotcopy needs DBI/DBD support
 Requires: perl-DBI, perl-DBD-MySQL
-Provides: mysql-compat-server = %{epoch}:%{version}-%{release}
-Provides: mysql-compat-server%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: mysql-server < %{obsoleted_mysql_evr}
+Provides: system-mysql-server = %{epoch}:%{version}-%{release}
+Provides: system-mysql-server%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: system-mysql-server
 
 %description server
 MariaDB is a multi-user, multi-threaded SQL database server. It is a
@@ -140,9 +151,9 @@ Summary: Files for development of MariaDB/MySQL applications
 Group: Applications/Databases
 Requires: %{name}-libs%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: openssl-devel%{?_isa}
-Provides: mysql-devel = %{epoch}:%{version}-%{release}
-Provides: mysql-devel%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: mysql-devel < %{obsoleted_mysql_evr}
+Provides: system-mysql-devel = %{epoch}:%{version}-%{release}
+Provides: system-mysql-devel%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: system-mysql-devel
 
 %description devel
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -155,7 +166,7 @@ MariaDB is a community developed branch of MySQL.
 Summary: MariaDB as an embeddable library
 Group: Applications/Databases
 Requires: /sbin/ldconfig
-Obsoletes: mysql-embedded < %{obsoleted_mysql_evr}
+Obsoletes: system-mysql-embedded
 
 %description embedded
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -169,7 +180,7 @@ Summary: Development files for MariaDB as an embeddable library
 Group: Applications/Databases
 Requires: %{name}-embedded%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: mysql-embedded-devel < %{obsoleted_mysql_evr}
+Obsoletes: system-mysql-embedded-devel
 
 %description embedded-devel
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -182,7 +193,7 @@ MariaDB is a community developed branch of MySQL.
 Summary: MariaDB benchmark scripts and data
 Group: Applications/Databases
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: mysql-bench < %{obsoleted_mysql_evr}
+Obsoletes: system-mysql-bench
 
 %description bench
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -199,7 +210,7 @@ Requires: %{name}-libs%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-server%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: perl(Socket), perl(Time::HiRes)
 Requires: perl(Data::Dumper), perl(Test::More), perl(Env)
-Obsoletes: mysql-test < %{obsoleted_mysql_evr}
+Obsoletes: system-mysql-test
 
 %description test
 MariaDB is a multi-user, multi-threaded SQL database server. This
@@ -226,7 +237,7 @@ MariaDB is a community developed branch of MySQL.
 %patch20 -p1
 
 # workaround for upstream bug #56342
-rm -f mysql-test/t/ssl_8k_key-master.opt
+rm -f system-mysql-test/t/ssl_8k_key-master.opt
 
 # generate a list of tests that fail, but are not disabled by upstream
 cat %{SOURCE14} > mysql-test/rh-skipped-tests.list
@@ -294,8 +305,10 @@ cmake . -DBUILD_CONFIG=mysql_release \
 	-DINSTALL_SCRIPTDIR=bin \
 	-DINSTALL_SQLBENCHDIR=share \
 	-DINSTALL_SUPPORTFILESDIR=share/mysql \
-	-DMYSQL_DATADIR="%{_localstatedir}/lib/mysql" \
-	-DMYSQL_UNIX_ADDR="%{_localstatedir}/lib/mysql/mysql.sock" \
+    -DINSTALL_SYSCONFDIR="%{_sysconfdir}" \
+    -DINSTALL_SYSCONF2DIR="%{_sysconfdir}/my.cnf.d" \
+	-DMYSQL_DATADIR="%{_localstatedir}/lib/system-mysql" \
+	-DMYSQL_UNIX_ADDR="%{_localstatedir}/lib/system-mysql/mysql.sock" \
 	-DENABLED_LOCAL_INFILE=ON \
 	-DENABLE_DTRACE=ON \
 	-DWITH_EMBEDDED_SERVER=ON \
@@ -391,16 +404,16 @@ chmod 755 ${RPM_BUILD_ROOT}%{_bindir}/mysql_config
 
 # install INFO_SRC, INFO_BIN into libdir (upstream thinks these are doc files,
 # but that's pretty wacko --- see also mariadb-file-contents.patch)
-install -p -m 644 Docs/INFO_SRC ${RPM_BUILD_ROOT}%{_libdir}/mysql/
-install -p -m 644 Docs/INFO_BIN ${RPM_BUILD_ROOT}%{_libdir}/mysql/
+# install -p -m 644 Docs/INFO_SRC ${RPM_BUILD_ROOT}%{_libdir}/mysql/
+# install -p -m 644 Docs/INFO_BIN ${RPM_BUILD_ROOT}%{_libdir}/mysql/
 rm -rf ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/MariaDB-server-%{version}/
 
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/mariadb
-chmod 0750 $RPM_BUILD_ROOT%{_localstatedir}/log/mariadb
-touch $RPM_BUILD_ROOT%{_localstatedir}/log/mariadb/mariadb.log
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/system-mariadb
+chmod 0750 $RPM_BUILD_ROOT%{_localstatedir}/log/system-mariadb
+touch $RPM_BUILD_ROOT%{_localstatedir}/log/system-mariadb/mariadb.log
 
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/mariadb
-install -m 0755 -d $RPM_BUILD_ROOT%{_localstatedir}/lib/mysql
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/system-mariadb
+install -m 0755 -d $RPM_BUILD_ROOT%{_localstatedir}/lib/system-mysql
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}
 install -p -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/my.cnf
@@ -408,8 +421,8 @@ install -p -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/my.cnf
 # install systemd unit files and scripts for handling server startup
 mkdir -p ${RPM_BUILD_ROOT}%{_unitdir}
 install -p -m 644 %{SOURCE11} ${RPM_BUILD_ROOT}%{_unitdir}/%{name}.service
-install -p -m 755 %{SOURCE12} ${RPM_BUILD_ROOT}%{_libexecdir}/
-install -p -m 755 %{SOURCE13} ${RPM_BUILD_ROOT}%{_libexecdir}/
+install -p -m 755 %{SOURCE12} ${RPM_BUILD_ROOT}%{_libexecdir}/mariadb-prepare-db-dir
+install -p -m 755 %{SOURCE13} ${RPM_BUILD_ROOT}%{_libexecdir}/mariadb-wait-ready
 
 mkdir -p $RPM_BUILD_ROOT%{_tmpfilesdir}
 install -p -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_tmpfilesdir}/%{name}.conf
@@ -418,6 +431,7 @@ install -p -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_tmpfilesdir}/%{name}.conf
 chmod 644 ${RPM_BUILD_ROOT}%{_datadir}/mysql/config.*.ini
 
 # Fix scripts for multilib safety
+mkdir -p ${RPM_BUILD_ROOT}%{_libdir}/mysql/mysql_config
 mv ${RPM_BUILD_ROOT}%{_bindir}/mysql_config ${RPM_BUILD_ROOT}%{_libdir}/mysql/mysql_config
 touch ${RPM_BUILD_ROOT}%{_bindir}/mysql_config
 
@@ -452,9 +466,12 @@ rm -f ${RPM_BUILD_ROOT}%{_mandir}/man1/mysql-test-run.pl.1*
 rm -f ${RPM_BUILD_ROOT}%{_bindir}/mytop
 
 # put logrotate script where it needs to be
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d
-mv ${RPM_BUILD_ROOT}%{_datadir}/mysql/mysql-log-rotate $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/mariadb
-chmod 644 $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/mariadb
+# mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d
+# mv ${RPM_BUILD_ROOT}%{_datadir}/mysql/mysql-log-rotate $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/mariadb
+# chmod 644 $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/mariadb
+rm ${RPM_BUILD_ROOT}%{_datadir}/mysql/mysql-log-rotate
+mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
+install -m 0644 %{SOURCE100} $RPM_BUILD_ROOT/etc/logrotate.d/system-mariadb
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/ld.so.conf.d
 echo "%{_libdir}/mysql" > $RPM_BUILD_ROOT%{_sysconfdir}/ld.so.conf.d/%{name}-%{_arch}.conf
@@ -489,41 +506,41 @@ rm -f ${RPM_BUILD_ROOT}%{_datadir}/doc/README
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/mysql/solaris/postinstall-solaris
 
 %pre server
-/usr/sbin/groupadd -g 27 -o -r mysql >/dev/null 2>&1 || :
-/usr/sbin/useradd -M -N -g mysql -o -r -d %{_localstatedir}/lib/mysql -s /sbin/nologin \
-	-c "MariaDB Server" -u 27 mysql >/dev/null 2>&1 || :
+/usr/sbin/groupadd -r system-mysql >/dev/null 2>&1 || :
+/usr/sbin/useradd -M -N -g system-mysql -r -d %{_localstatedir}/lib/system-mysql -s /sbin/nologin \
+	-c "System Database Server" system-mysql >/dev/null 2>&1 || :
 
-%post devel
-%{_sbindir}/update-alternatives --install %{_bindir}/mysql_config \
-	mysql_config %{_libdir}/mysql/mysql_config %{__isa_bits}
+#% post devel
+# %{_sbindir}/update-alternatives --install %{_bindir}/mysql_config \
+#	mysql_config %{_libdir}/mysql/mysql_config %{__isa_bits}
 
 %post libs -p /sbin/ldconfig
 
 %post server
-%systemd_post mariadb.service
-/bin/chmod 0755 %{_localstatedir}/lib/mysql
-/bin/touch %{_localstatedir}/log/mariadb/mariadb.log
+%systemd_post system-mariadb.service
+/bin/chmod 0755 %{_localstatedir}/lib/system-mysql
+/bin/touch %{_localstatedir}/log/system-mariadb/mariadb.log
 
-%{_sbindir}/update-alternatives --install %{_bindir}/mysqlbug \
-	mysqlbug %{_libdir}/mysql/mysqlbug %{__isa_bits}
+#% {_sbindir}/update-alternatives --install %{_bindir}/mysqlbug \
+#	mysqlbug %{_libdir}/mysql/mysqlbug %{__isa_bits}
 
 %post embedded -p /sbin/ldconfig
 
 %preun server
-%systemd_preun mariadb.service
+%systemd_preun system-mariadb.service
 
 %postun devel
-if [ $1 -eq 0 ] ; then
-	%{_sbindir}/update-alternatives --remove mysql_config %{_libdir}/mysql/mysql_config
-fi
+# if [ $1 -eq 0 ] ; then
+#	%{_sbindir}/update-alternatives --remove mysql_config %{_libdir}/mysql/mysql_config
+# fi
 
 %postun libs -p /sbin/ldconfig
 
 %postun server
-%systemd_postun_with_restart mariadb.service
-if [ $1 -eq 0 ] ; then
-	%{_sbindir}/update-alternatives --remove mysqlbug %{_libdir}/mysql/mysqlbug
-fi
+%systemd_postun_with_restart system-mariadb.service
+# if [ $1 -eq 0 ] ; then
+#	%{_sbindir}/update-alternatives --remove mysqlbug %{_libdir}/mysql/mysqlbug
+# fi
 
 %postun embedded -p /sbin/ldconfig
 
@@ -635,8 +652,8 @@ fi
 
 %{_libexecdir}/mysqld
 
-%{_libdir}/mysql/INFO_SRC
-%{_libdir}/mysql/INFO_BIN
+# %{_libdir}/mysql/INFO_SRC
+# %{_libdir}/mysql/INFO_BIN
 
 %{_libdir}/mysql/mysqlbug
 
@@ -684,16 +701,16 @@ fi
 %doc %{_datadir}/mysql/README.mysql-cnf
 %{_datadir}/mysql/config.*.ini
 
-%{_unitdir}/mariadb.service
+%{_unitdir}/system-mariadb.service
 %{_libexecdir}/mariadb-prepare-db-dir
 %{_libexecdir}/mariadb-wait-ready
 
 %{_tmpfilesdir}/%{name}.conf
-%attr(0755,mysql,mysql) %dir %{_localstatedir}/run/mariadb
-%attr(0755,mysql,mysql) %dir %{_localstatedir}/lib/mysql
-%attr(0750,mysql,mysql) %dir %{_localstatedir}/log/mariadb
-%attr(0640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) %{_localstatedir}/log/mariadb/mariadb.log
-%config(noreplace) %{_sysconfdir}/logrotate.d/mariadb
+%attr(0755,system-mysql,system-mysql) %dir %{_localstatedir}/run/system-mariadb
+%attr(0755,system-mysql,system-mysql) %dir %{_localstatedir}/lib/system-mysql
+%attr(0750,system-mysql,system-mysql) %dir %{_localstatedir}/log/system-mariadb
+%attr(0640,system-mysql,system-mysql) %config(noreplace) %verify(not md5 size mtime) %{_localstatedir}/log/system-mariadb/mariadb.log
+%config(noreplace) /etc/logrotate.d/system-mariadb
 
 %files devel
 %ghost %{_bindir}/mysql_config
@@ -722,11 +739,14 @@ fi
 %files test
 %{_bindir}/mysql_client_test
 %{_bindir}/my_safe_process
-%attr(-,mysql,mysql) %{_datadir}/mysql-test
+%attr(-,system-mysql,system-mysql) %{_datadir}/mysql-test
 
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Wed Jun 18 2014 ClearFoundation <developer@clearfoundation.com> - 1:5.5.37-1.clear
+- Create sandboxed version
+
 * Mon May 26 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.37-1
 - Rebase to 5.5.37
   https://kb.askmonty.org/en/mariadb-5537-changelog/

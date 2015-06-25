@@ -9,7 +9,7 @@
 # We use my_print_defaults which prints all options from multiple files,
 # with the more specific ones later; hence take the last match.
 get_mysql_option(){
-        result=`/usr/bin/my_print_defaults "$1" | sed -n "s/^--$2=//p" | tail -n 1`
+        result=`/usr/clearos/sandbox/usr/bin/my_print_defaults "$1" | sed -n "s/^--$2=//p" | tail -n 1`
         if [ -z "$result" ]; then
             # not found, use default
             result="$3"
@@ -17,9 +17,9 @@ get_mysql_option(){
 }
 
 # Defaults here had better match what mysqld_safe will default to
-get_mysql_option mysqld datadir "/var/lib/mysql"
+get_mysql_option mysqld datadir "/var/lib/system-mysql"
 datadir="$result"
-get_mysql_option mysqld_safe log-error "/var/log/mariadb/mariadb.log"
+get_mysql_option mysqld_safe log-error "/var/log/system-mariadb/mariadb.log"
 errlogfile="$result"
 get_mysql_option mysqld socket "$datadir/mysql.sock"
 socketfile="$result"
@@ -36,14 +36,14 @@ myuser=`systemctl show -p User "${SERVICE_NAME}" |
   sed 's/^User=//'`
 if [ x"$myuser" = x ]
 then
-    myuser=mysql
+    myuser=system-mysql
 fi
 
 mygroup=`systemctl show -p Group "${SERVICE_NAME}" |
   sed 's/^Group=//'`
 if [ x"$mygroup" = x ]
 then
-    mygroup=mysql
+    mygroup=system-mysql
 fi
 
 # Set up the errlogfile with appropriate permissions
@@ -76,7 +76,7 @@ if [ ! -d "$datadir/mysql" ] ; then
 
     # Now create the database
     echo "Initializing MySQL database"
-    /usr/bin/mysql_install_db --datadir="$datadir" --user="$myuser"
+    /usr/clearos/sandbox/usr/bin/mysql_install_db --datadir="$datadir" --user="$myuser"
     ret=$?
     if [ $ret -ne 0 ] ; then
         echo "Initialization of MySQL database failed." >&2
