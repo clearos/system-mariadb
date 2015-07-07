@@ -1,1 +1,3 @@
 SOURCES/mariadb-5.5.41.tar.gz
+/Makefile
+*.src.rpm
