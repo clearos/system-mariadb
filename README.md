@@ -5,7 +5,7 @@ Forked version of mariadb in a chroot with ClearOS changes applied
 ## Update usage
   Add __#kojibuild__ to commit message to automatically build
 
-* git clone git://github.com/clearos/system-mariadb.git
+* git clone git+ssh://git@github.com/clearos/system-mariadb.git
 * cd system-mariadb
 * git checkout c7
 * git remote add upstream git://git.centos.org/rpms/mariadb.git
