@@ -3,8 +3,8 @@
 %bcond_with tokudb
 
 Name: mariadb
-Version: 5.5.41
-Release: 2%{?dist}
+Version: 5.5.44
+Release: 1%{?dist}
 Epoch: 1
 
 Summary: A community developed branch of MySQL
@@ -48,14 +48,12 @@ Patch8: mariadb-logrotate.patch
 Patch9: mariadb-cipherreplace.patch
 Patch10: mariadb-file-contents.patch
 Patch11: mariadb-string-overflow.patch
-Patch12: mariadb-dh1024.patch
 Patch14: mariadb-basedir.patch
 Patch17: mariadb-covscan-signexpr.patch
 Patch18: mariadb-covscan-stroverflow.patch
 Patch19: mariadb-ssltest.patch
 #Patch20: mariadb-symbols-versioning.patch
 Patch21: mariadb-headerfile.patch
-Patch22: mariadb-expired-certs.patch
 
 BuildRequires: perl, readline-devel, openssl-devel
 BuildRequires: cmake, ncurses-devel, zlib-devel, libaio-devel
@@ -220,14 +218,12 @@ MariaDB is a community developed branch of MySQL.
 %patch9 -p1
 %patch10 -p1
 %patch11 -p1
-%patch12 -p1
 %patch14 -p1
 %patch17 -p1
 %patch18 -p1
 %patch19 -p1
 #%patch20 -p1
 #%patch21 -p1
-%patch22 -p1
 
 # workaround for upstream bug #56342
 rm -f mysql-test/t/ssl_8k_key-master.opt
@@ -239,11 +235,16 @@ cat %{SOURCE14} > mysql-test/rh-skipped-tests.list
 cat %{SOURCE15} >> mysql-test/rh-skipped-tests.list
 %endif
 # disable some tests failing on ppc and s390
-%ifarch ppc ppc64 ppc64p7 s390 s390x aarch64
+%ifarch ppc %{power64} s390 s390x aarch64
 echo "main.gis-precise : rhbz#906367" >> mysql-test/rh-skipped-tests.list
 %endif
 %ifarch i686
 echo "main.mysql_client_test_nonblock : rhbz#1021450" >> mysql-test/rh-skipped-tests.list
+%endif
+%ifarch %{power64}
+echo "rpl.rpl_insert : rhbz#1125605" >> mysql-test/rh-skipped-tests.list
+echo "rpl.rpl_insert_delayed : rhbz#1125605" >> mysql-test/rh-skipped-tests.list
+echo "main.mysqlslap : rhbz#1125605" >> mysql-test/rh-skipped-tests.list
 %endif
 
 %build
@@ -268,7 +269,7 @@ CFLAGS=`echo $CFLAGS| sed -e "s|-O2|-O1|g" `
 %endif
 # significant performance gains can be achieved by compiling with -O3 optimization
 # rhbz#1051069
-%ifarch ppc64
+%ifarch %{power64}
 CFLAGS=`echo $CFLAGS| sed -e "s|-O2|-O3|g" `
 %endif
 CXXFLAGS="$CFLAGS"
@@ -326,7 +327,7 @@ done
 %if %runselftest
   # hack to let 32- and 64-bit tests run concurrently on same build machine
   case `uname -m` in
-    ppc64 | ppc64p7 | s390x | x86_64 | sparc64 )
+    ppc64 | ppc64p7 | ppc64le | s390x | x86_64 | sparc64 )
       MTR_BUILD_THREAD=7
       ;;
     *)
@@ -343,13 +344,12 @@ done
   # manually.  Nonstandard options chosen are:
   # --force to continue tests after a failure
   # no retries please
-  # test SSL with --ssl
   # skip tests that are listed in rh-skipped-tests.list
   # avoid redundant test runs with --binlog-format=mixed
   # increase timeouts to prevent unwanted failures during mass rebuilds
   (
     cd mysql-test
-    perl ./mysql-test-run.pl --force --retry=0 --ssl \
+    perl ./mysql-test-run.pl --force --retry=0 \
 	--skip-test-list=rh-skipped-tests.list \
 	--suite-timeout=720 --testcase-timeout=30 \
 	--mysqld=--binlog-format=mixed --force-restart \
@@ -367,22 +367,19 @@ find $RPM_BUILD_ROOT -print | sed "s|^$RPM_BUILD_ROOT||" | sort > ROOTFILES
 
 # multilib header hacks
 # we only apply this to known Red Hat multilib arches, per bug #181335
-case `uname -i` in
-  i386 | x86_64 | ppc | ppc64 | ppc64p7 | s390 | s390x | sparc | sparc64 | aarch64 )
-    mv $RPM_BUILD_ROOT%{_includedir}/mysql/my_config.h $RPM_BUILD_ROOT%{_includedir}/mysql/my_config_`uname -i`.h
-    mv $RPM_BUILD_ROOT%{_includedir}/mysql/private/config.h $RPM_BUILD_ROOT%{_includedir}/mysql/private/my_config_`uname -i`.h
-    install -p -m 644 %{SOURCE5} $RPM_BUILD_ROOT%{_includedir}/mysql/
-    install -p -m 644 %{SOURCE5} $RPM_BUILD_ROOT%{_includedir}/mysql/private/config.h
-    ;;
-  arm* )
-    mv $RPM_BUILD_ROOT%{_includedir}/mysql/my_config.h $RPM_BUILD_ROOT%{_includedir}/mysql/my_config_arm.h
-    mv $RPM_BUILD_ROOT%{_includedir}/mysql/private/config.h $RPM_BUILD_ROOT%{_includedir}/mysql/private/my_config_arm.h
-    install -p -m 644 %{SOURCE5} $RPM_BUILD_ROOT%{_includedir}/mysql/
-    install -p -m 644 %{SOURCE5} $RPM_BUILD_ROOT%{_includedir}/mysql/private/config.h
-    ;;
-  *)
-    ;;
-esac
+unamei=$(uname -i)
+%ifarch %{arm}
+unamei=arm
+%endif
+%ifarch %{power64}
+unamei=ppc64
+%endif
+%ifarch %{arm} aarch64 %{ix86} x86_64 ppc %{power64} %{sparc} s390 s390x
+mv $RPM_BUILD_ROOT%{_includedir}/mysql/my_config.h $RPM_BUILD_ROOT%{_includedir}/mysql/my_config_${unamei}.h
+mv $RPM_BUILD_ROOT%{_includedir}/mysql/private/config.h $RPM_BUILD_ROOT%{_includedir}/mysql/private/my_config_${unamei}.h
+install -p -m 644 %{SOURCE5} $RPM_BUILD_ROOT%{_includedir}/mysql/
+install -p -m 644 %{SOURCE5} $RPM_BUILD_ROOT%{_includedir}/mysql/private/config.h
+%endif
 
 # cmake generates some completely wacko references to -lprobes_mysql when
 # building with dtrace support.  Haven't found where to shut that off,
@@ -565,13 +562,13 @@ fi
 %{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlslap.1*
 %{_mandir}/man1/my_print_defaults.1*
-#%{_mandir}/man1/mysql_fix_privilege_tables.1*
-#%{_mandir}/man8/mysqlmanager.8*
 %{_mandir}/man1/aria_chk.1.gz
 %{_mandir}/man1/aria_dump_log.1.gz
 %{_mandir}/man1/aria_ftdump.1.gz
 %{_mandir}/man1/aria_pack.1.gz
 %{_mandir}/man1/aria_read_log.1.gz
+#%{_mandir}/man1/mysql_fix_privilege_tables.1*
+#%{_mandir}/man8/mysqlmanager.8*
 
 %config(noreplace) %{_sysconfdir}/my.cnf.d/client.cnf
 
@@ -736,26 +733,39 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Tue Jul 28 2015 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.44-1
+- Rebase to 5.5.44
+  Resolves: #1247021
+
 * Thu Jan 29 2015 Honza Horak <hhorak@redhat.com> - 1:5.5.41-2
 - Include new certificate for tests
-  Resolves: #1186109
+  Resolves: #1186110
 
 * Tue Jan 27 2015 Matej Muzila <mmuzila@redhat.com> - 1:5.5.41-1
 - Rebase to 5.5.41
-  Also fix: CVE-2014-6568 CVE-2015-0374 CVE-2015-0381 CVE-2015-0382
+  Also fixes: CVE-2014-6568 CVE-2015-0374 CVE-2015-0381 CVE-2015-0382
   CVE-2015-0391 CVE-2015-0411 CVE-2015-0432
-  Resolves: #1186109
+  Resolves: #1186110
 
 * Tue Dec 30 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.40-2
 - Fix header to let dependencies to build fine
-  Resolves: #1177836
+  Resolves: #1166603
 
 * Thu Nov 06 2014 Matej Muzila <mmuzila@redhat.com> - 1:5.5.40-1
 - Rebase to 5.5.40
   Also fixes: CVE-2014-4274 CVE-2014-4287 CVE-2014-6463 CVE-2014-6464
   CVE-2014-6469 CVE-2014-6484 CVE-2014-6505 CVE-2014-6507 CVE-2014-6520
   CVE-2014-6530 CVE-2014-6551 CVE-2014-6555 CVE-2014-6559 CVE-2014-6564
-  Resolves: #1160548
+  Resolves: #1160549
+
+* Thu Aug 21 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.37-3
+- Fix my_config.h to include correct header
+  Related: #1123497
+
+* Tue Aug 19 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.37-2
+- Build with -O3 on all power64 arches
+  Disable some failing tests temporarily on ppc64le
+  Resolves: #1123497
 
 * Mon May 26 2014 Honza Horak <hhorak@redhat.com> - 1:5.5.37-1
 - Rebase to 5.5.37
