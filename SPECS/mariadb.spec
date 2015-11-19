@@ -4,7 +4,7 @@
 
 Name: mariadb
 Version: 5.5.44
-Release: 1%{?dist}
+Release: 2%{?dist}
 Epoch: 1
 
 Summary: A community developed branch of MySQL
@@ -733,9 +733,17 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Mon Sep 21 2015 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.44-2
+- Rebuild
+  Related: #1247022
+
 * Tue Jul 28 2015 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.44-1
 - Rebase to 5.5.44
-  Resolves: #1247021
+  Resolves: #1247022
+
+* Wed Jul  8 2015 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.41-3
+- rebuild for correct systemtap markers on aarch64
+  Resolves: #1238468
 
 * Thu Jan 29 2015 Honza Horak <hhorak@redhat.com> - 1:5.5.41-2
 - Include new certificate for tests
