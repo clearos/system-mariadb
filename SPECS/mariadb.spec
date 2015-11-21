@@ -54,6 +54,8 @@ Patch18: mariadb-covscan-stroverflow.patch
 Patch19: mariadb-ssltest.patch
 #Patch20: mariadb-symbols-versioning.patch
 Patch21: mariadb-headerfile.patch
+# added by CentOS
+Patch99: mariabd-events_1-10152015.patch
 
 BuildRequires: perl, readline-devel, openssl-devel
 BuildRequires: cmake, ncurses-devel, zlib-devel, libaio-devel
@@ -224,6 +226,9 @@ MariaDB is a community developed branch of MySQL.
 %patch19 -p1
 #%patch20 -p1
 #%patch21 -p1
+
+#added by CentOS
+%patch99 -p1
 
 # workaround for upstream bug #56342
 rm -f mysql-test/t/ssl_8k_key-master.opt
@@ -733,6 +738,10 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+- Sat Nov 21 2015 Johnny Hughes
+- added upstream patch https://github.com/MariaDB/server/commit/7454f1c54cd310455ecc49a5c9af82fad96be66f.patch
+  to fix a date timebomb and allow build after 10/15/2015 
+
 * Mon Sep 21 2015 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.44-2
 - Rebuild
   Related: #1247022

@@ -1,0 +1,38 @@
+From 7454f1c54cd310455ecc49a5c9af82fad96be66f Mon Sep 17 00:00:00 2001
+From: Sergei Golubchik <serg@mariadb.org>
+Date: Thu, 15 Oct 2015 08:49:58 +0200
+Subject: [PATCH] fix events_1 test for October 2015
+
+---
+ mysql-test/r/events_1.result | 3 ++-
+ mysql-test/t/events_1.test   | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/mysql-test/r/events_1.result b/mysql-test/r/events_1.result
+index 7811549..637cd26 100644
+--- a/mysql-test/r/events_1.result
++++ b/mysql-test/r/events_1.result
+@@ -115,7 +115,8 @@ create table t_event3 (a int, b float);
+ drop event if exists event3;
+ Warnings:
+ Note	1305	Event event3 does not exist
+-create event event3 on schedule every 50 + 10 minute starts date_add("20100101", interval 5 minute) ends date_add("20151010", interval 5 day) comment "portokala_comment" DO insert into t_event3 values (unix_timestamp(), rand());
++create event event3 on schedule every 50 + 10 minute starts date_add("20100101", interval 5 minute) ends date_add("20251010", interval 5 day)
++comment "portokala_comment" DO insert into t_event3 values (unix_timestamp(), rand());
+ select count(*) from t_event3;
+ count(*)
+ 0
+diff --git a/mysql-test/t/events_1.test b/mysql-test/t/events_1.test
+index 7cd488b..badcfe4 100644
+--- a/mysql-test/t/events_1.test
++++ b/mysql-test/t/events_1.test
+@@ -127,7 +127,8 @@ drop event existant;
+ 
+ create table t_event3 (a int, b float);
+ drop event if exists event3;
+-create event event3 on schedule every 50 + 10 minute starts date_add("20100101", interval 5 minute) ends date_add("20151010", interval 5 day) comment "portokala_comment" DO insert into t_event3 values (unix_timestamp(), rand());
++create event event3 on schedule every 50 + 10 minute starts date_add("20100101", interval 5 minute) ends date_add("20251010", interval 5 day)
++  comment "portokala_comment" DO insert into t_event3 values (unix_timestamp(), rand());
+ let $wait_condition=SELECT count(*)=0 from t_event3;
+ --source include/wait_condition.inc
+ select count(*) from t_event3;
