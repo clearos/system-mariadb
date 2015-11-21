@@ -738,7 +738,7 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
-- Sat Nov 21 2015 Johnny Hughes
+* Sat Nov 21 2015 Johnny Hughes
 - added upstream patch https://github.com/MariaDB/server/commit/7454f1c54cd310455ecc49a5c9af82fad96be66f.patch
   to fix a date timebomb and allow build after 10/15/2015 
 
