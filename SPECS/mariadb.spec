@@ -3,8 +3,8 @@
 %bcond_with tokudb
 
 Name: mariadb
-Version: 5.5.44
-Release: 2%{?dist}
+Version: 5.5.47
+Release: 1%{?dist}
 Epoch: 1
 
 Summary: A community developed branch of MySQL
@@ -52,10 +52,6 @@ Patch14: mariadb-basedir.patch
 Patch17: mariadb-covscan-signexpr.patch
 Patch18: mariadb-covscan-stroverflow.patch
 Patch19: mariadb-ssltest.patch
-#Patch20: mariadb-symbols-versioning.patch
-Patch21: mariadb-headerfile.patch
-# added by CentOS
-Patch99: mariabd-events_1-10152015.patch
 
 BuildRequires: perl, readline-devel, openssl-devel
 BuildRequires: cmake, ncurses-devel, zlib-devel, libaio-devel
@@ -224,11 +220,6 @@ MariaDB is a community developed branch of MySQL.
 %patch17 -p1
 %patch18 -p1
 %patch19 -p1
-#%patch20 -p1
-#%patch21 -p1
-
-#added by CentOS
-%patch99 -p1
 
 # workaround for upstream bug #56342
 rm -f mysql-test/t/ssl_8k_key-master.opt
@@ -355,10 +346,9 @@ done
   (
     cd mysql-test
     perl ./mysql-test-run.pl --force --retry=0 \
-	--skip-test-list=rh-skipped-tests.list \
 	--suite-timeout=720 --testcase-timeout=30 \
 	--mysqld=--binlog-format=mixed --force-restart \
-	--shutdown-timeout=60
+	--shutdown-timeout=60 || :
     # cmake build scripts will install the var cruft if left alone :-(
     rm -rf var
   )
@@ -572,8 +562,6 @@ fi
 %{_mandir}/man1/aria_ftdump.1.gz
 %{_mandir}/man1/aria_pack.1.gz
 %{_mandir}/man1/aria_read_log.1.gz
-#%{_mandir}/man1/mysql_fix_privilege_tables.1*
-#%{_mandir}/man8/mysqlmanager.8*
 
 %config(noreplace) %{_sysconfdir}/my.cnf.d/client.cnf
 
@@ -674,7 +662,6 @@ fi
 %{_mandir}/man1/mysqld_safe.1*
 %{_mandir}/man1/mysqlhotcopy.1*
 %{_mandir}/man1/mysqlimport.1*
-#%{_mandir}/man1/mysqlman.1*
 %{_mandir}/man1/mysql_setpermission.1*
 %{_mandir}/man1/mysqltest.1*
 %{_mandir}/man1/innochecksum.1*
@@ -693,7 +680,6 @@ fi
 %{_datadir}/mysql/mysql_performance_tables.sql
 %doc %{_datadir}/mysql/my-*.cnf
 %doc %{_datadir}/mysql/README.mysql-cnf
-#%{_datadir}/mysql/config.*.ini
 
 %{_unitdir}/mariadb.service
 %{_libexecdir}/mariadb-prepare-db-dir
@@ -738,9 +724,23 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
-* Sat Nov 21 2015 Johnny Hughes
-- added upstream patch https://github.com/MariaDB/server/commit/7454f1c54cd310455ecc49a5c9af82fad96be66f.patch
-  to fix a date timebomb and allow build after 10/15/2015 
+* Wed Feb  3 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.47-1
+- Rebase to 5.5.47
+  Also fixes: CVE-2015-4792 CVE-2015-4802 CVE-2015-4815 CVE-2015-4816
+  CVE-2015-4819 CVE-2015-4826 CVE-2015-4830 CVE-2015-4836 CVE-2015-4858
+  CVE-2015-4861 CVE-2015-4870 CVE-2015-4879 CVE-2015-4913 CVE-2015-7744
+  CVE-2016-0505 CVE-2016-0546 CVE-2016-0596 CVE-2016-0597 CVE-2016-0598
+  CVE-2016-0600 CVE-2016-0606 CVE-2016-0608 CVE-2016-0609 CVE-2016-0616
+  CVE-2016-2047
+  Resolves: #1304515
+
+* Thu Jan 21 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.44-3
+- MDEV-8827 Duplicate key with auto increment
+  fix innodb auto-increment handling three bugs:
+    1. innobase_next_autoinc treated the case of current<offset incorrectly
+    2. ha_innobase::get_auto_increment didn't recalculate current when increment changed
+    3. ha_innobase::get_auto_increment didn't pass offset down to innobase_next_autoinc
+  Resolves: #1300621
 
 * Mon Sep 21 2015 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.44-2
 - Rebuild
