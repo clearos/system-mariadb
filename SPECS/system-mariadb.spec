@@ -12,7 +12,7 @@
 # variable tokudb allows to build with TokuDB storage engine
 %bcond_with tokudb
 
-Name: mariadb
+Name: system-mariadb
 Version: 5.5.47
 Release: 1%{?dist}
 Epoch: 1
