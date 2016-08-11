@@ -3,7 +3,7 @@
 %bcond_with tokudb
 
 Name: mariadb
-Version: 5.5.47
+Version: 5.5.50
 Release: 1%{?dist}
 Epoch: 1
 
@@ -51,7 +51,6 @@ Patch11: mariadb-string-overflow.patch
 Patch14: mariadb-basedir.patch
 Patch17: mariadb-covscan-signexpr.patch
 Patch18: mariadb-covscan-stroverflow.patch
-Patch19: mariadb-ssltest.patch
 
 BuildRequires: perl, readline-devel, openssl-devel
 BuildRequires: cmake, ncurses-devel, zlib-devel, libaio-devel
@@ -219,7 +218,6 @@ MariaDB is a community developed branch of MySQL.
 %patch14 -p1
 %patch17 -p1
 %patch18 -p1
-%patch19 -p1
 
 # workaround for upstream bug #56342
 rm -f mysql-test/t/ssl_8k_key-master.opt
@@ -724,6 +722,10 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Mon Jul 25 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.50-1
+- Rebase to 5.5.50
+  Resolves: #1359628
+
 * Wed Feb  3 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.47-1
 - Rebase to 5.5.47
   Also fixes: CVE-2015-4792 CVE-2015-4802 CVE-2015-4815 CVE-2015-4816
