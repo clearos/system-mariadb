@@ -3,7 +3,7 @@
 %bcond_with tokudb
 
 Name: mariadb
-Version: 5.5.50
+Version: 5.5.52
 Release: 1%{?dist}
 Epoch: 1
 
@@ -51,6 +51,7 @@ Patch11: mariadb-string-overflow.patch
 Patch14: mariadb-basedir.patch
 Patch17: mariadb-covscan-signexpr.patch
 Patch18: mariadb-covscan-stroverflow.patch
+Patch20: mariadb-mysql_secure_installation.patch
 
 BuildRequires: perl, readline-devel, openssl-devel
 BuildRequires: cmake, ncurses-devel, zlib-devel, libaio-devel
@@ -218,6 +219,7 @@ MariaDB is a community developed branch of MySQL.
 %patch14 -p1
 %patch17 -p1
 %patch18 -p1
+%patch20 -p1
 
 # workaround for upstream bug #56342
 rm -f mysql-test/t/ssl_8k_key-master.opt
@@ -269,7 +271,7 @@ CFLAGS=`echo $CFLAGS| sed -e "s|-O2|-O3|g" `
 CXXFLAGS="$CFLAGS"
 export CFLAGS CXXFLAGS
 # building with PIE
-LDFLAGS="$LDFLAGS -pie"
+LDFLAGS="$LDFLAGS -fPIE -pie -Wl,-z,relro,-z,now"
 export LDFLAGS
 
 # The INSTALL_xxx macros have to be specified relative to CMAKE_INSTALL_PREFIX
@@ -573,6 +575,8 @@ fi
 %dir %{_sysconfdir}/my.cnf.d
 %dir %{_libdir}/mysql
 %{_libdir}/mysql/libmysqlclient.so.*
+%{_libdir}/mysql/plugin/dialog.so
+%{_libdir}/mysql/plugin/mysql_clear_password.so
 %{_sysconfdir}/ld.so.conf.d/*
 
 %dir %{_datadir}/mysql
@@ -637,6 +641,8 @@ fi
 
 %{_libdir}/mysql/mysqlbug
 
+%exclude %{_libdir}/mysql/plugin/dialog.so
+%exclude %{_libdir}/mysql/plugin/mysql_clear_password.so
 %{_libdir}/mysql/plugin
 
 %{_mandir}/man1/msql2mysql.1*
@@ -722,9 +728,33 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Wed Sep 21 2016 Honza Horak <hhorak@redhat.com> - 5.5.52-1
+- Rebase to 5.5.52, that also include fix for CVE-2016-6662
+  Resolves: #1377974
+
+* Wed Aug 24 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.50-2
+- Rebuild
+  Related: #1359629
+
 * Mon Jul 25 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.50-1
 - Rebase to 5.5.50
-  Resolves: #1359628
+  Resolves: #1359629
+
+* Thu Jul 07 2016 Honza Horak <hhorak@redhat.com> - 1:5.5.47-5
+- Use full relro instead of just pie
+  Resolves: #1335863
+
+* Mon May 09 2016 Honza Horak <hhorak@redhat.com> - 1:5.5.47-4
+- dialog.so and mysql_clear_password.so should be in mariadb-libs package
+  Resolves: #1138843
+
+* Tue Apr 26 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.47-3
+- Fixed mysql_secure_installation
+  Resolves: #1186040
+
+* Thu Feb 18 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.47-2
+- Add warning to /usr/lib/tmpfiles.d/mariadb.conf
+  Resolves: #1241623
 
 * Wed Feb  3 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.47-1
 - Rebase to 5.5.47
@@ -734,7 +764,7 @@ fi
   CVE-2016-0505 CVE-2016-0546 CVE-2016-0596 CVE-2016-0597 CVE-2016-0598
   CVE-2016-0600 CVE-2016-0606 CVE-2016-0608 CVE-2016-0609 CVE-2016-0616
   CVE-2016-2047
-  Resolves: #1304515
+  Resolves: #1300621
 
 * Thu Jan 21 2016 Jakub Dorňák <jdornak@redhat.com> - 1:5.5.44-3
 - MDEV-8827 Duplicate key with auto increment
