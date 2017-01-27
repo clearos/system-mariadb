@@ -14,7 +14,7 @@
 
 Name: system-mariadb
 Version: 5.5.52
-Release: 1%{?dist}
+Release: 2%{?dist}
 Epoch: 1
 
 Summary: A community developed branch of MySQL
