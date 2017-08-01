@@ -3,8 +3,8 @@
 %bcond_with tokudb
 
 Name: mariadb
-Version: 5.5.52
-Release: 1%{?dist}
+Version: 5.5.56
+Release: 2%{?dist}
 Epoch: 1
 
 Summary: A community developed branch of MySQL
@@ -34,7 +34,6 @@ Source11: mariadb.service
 Source12: mariadb-prepare-db-dir
 Source13: mariadb-wait-ready
 Source14: rh-skipped-tests-base.list
-Source15: rh-skipped-tests-arm.list
 Source16: README.mysql-cnf
 # Working around perl dependency checking bug in rpm FTTB. Remove later.
 Source999: filter-requires-mysql.sh
@@ -62,6 +61,8 @@ BuildRequires: time procps
 # perl modules needed to run regression tests
 BuildRequires: perl(Socket), perl(Time::HiRes)
 BuildRequires: perl(Data::Dumper), perl(Test::More), perl(Env)
+# version 5.5.56+ requires checkpolicy and policycoreutils-python
+BuildRequires: checkpolicy policycoreutils-python
 
 Requires: %{name}-libs%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: grep, fileutils, bash
@@ -226,21 +227,12 @@ rm -f mysql-test/t/ssl_8k_key-master.opt
 
 # generate a list of tests that fail, but are not disabled by upstream
 cat %{SOURCE14} > mysql-test/rh-skipped-tests.list
-# disable some tests failing on ARM architectures
-%ifarch %{arm} aarch64
-cat %{SOURCE15} >> mysql-test/rh-skipped-tests.list
-%endif
-# disable some tests failing on ppc and s390
-%ifarch ppc %{power64} s390 s390x aarch64
-echo "main.gis-precise : rhbz#906367" >> mysql-test/rh-skipped-tests.list
+# disable some tests failing on particular aches
+%ifarch aarch64
+echo "perfschema.dml_setup_timers : rhbz#1449880" >> mysql-test/rh-skipped-tests.list
 %endif
 %ifarch i686
 echo "main.mysql_client_test_nonblock : rhbz#1021450" >> mysql-test/rh-skipped-tests.list
-%endif
-%ifarch %{power64}
-echo "rpl.rpl_insert : rhbz#1125605" >> mysql-test/rh-skipped-tests.list
-echo "rpl.rpl_insert_delayed : rhbz#1125605" >> mysql-test/rh-skipped-tests.list
-echo "main.mysqlslap : rhbz#1125605" >> mysql-test/rh-skipped-tests.list
 %endif
 
 %build
@@ -346,9 +338,10 @@ done
   (
     cd mysql-test
     perl ./mysql-test-run.pl --force --retry=0 \
+	--skip-test-list=rh-skipped-tests.list \
 	--suite-timeout=720 --testcase-timeout=30 \
 	--mysqld=--binlog-format=mixed --force-restart \
-	--shutdown-timeout=60 || :
+	--shutdown-timeout=60
     # cmake build scripts will install the var cruft if left alone :-(
     rm -rf var
   )
@@ -475,7 +468,6 @@ rm -f ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/mysql
 
 # remove doc files that we rather pack using %%doc
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/doc/COPYING
-rm -f ${RPM_BUILD_ROOT}%{_datadir}/doc/COPYING.LESSER
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/doc/INFO_BIN
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/doc/INFO_SRC
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/doc/INSTALL-BINARY
@@ -524,7 +516,7 @@ fi
 %postun embedded -p /sbin/ldconfig
 
 %files
-%doc README COPYING COPYING.LESSER README.mysql-license
+%doc README COPYING README.mysql-license
 %doc storage/innobase/COPYING.Percona storage/innobase/COPYING.Google
 %doc README.mysql-docs
 
@@ -566,7 +558,7 @@ fi
 %config(noreplace) %{_sysconfdir}/my.cnf.d/client.cnf
 
 %files libs
-%doc README COPYING COPYING.LESSER README.mysql-license
+%doc README COPYING README.mysql-license
 %doc storage/innobase/COPYING.Percona storage/innobase/COPYING.Google
 # although the default my.cnf contains only server settings, we put it in the
 # libs package because it can be used for client settings too.
@@ -623,6 +615,7 @@ fi
 %{_bindir}/mysqldumpslow
 %{_bindir}/mysqld_multi
 %{_bindir}/mysqld_safe
+%{_bindir}/mysqld_safe_helper
 %{_bindir}/mysqlhotcopy
 %{_bindir}/mysqltest
 %{_bindir}/innochecksum
@@ -706,7 +699,7 @@ fi
 %{_mandir}/man1/mysql_config.1*
 
 %files embedded
-%doc README COPYING COPYING.LESSER README.mysql-license
+%doc README COPYING README.mysql-license
 %doc storage/innobase/COPYING.Percona storage/innobase/COPYING.Google
 %{_libdir}/mysql/libmysqld.so.*
 
@@ -728,6 +721,33 @@ fi
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
+* Thu Jun 08 2017 Honza Horak <hhorak@redhat.com> - 1:5.5.56-2
+- Do not fix context and change owner if run by root in mariadb-prepare-db-dir
+  Related: #1458940
+- Check properly that datadir includes only expected files
+  Related: #1356897
+
+* Mon Jun 05 2017 Honza Horak <hhorak@redhat.com> - 1:5.5.56-1
+- Rebase to 5.5.56
+  That release also fixes the following security issues:
+  CVE-2016-5617/CVE-2016-6664 CVE-2017-3312 CVE-2017-3238 CVE-2017-3243
+  CVE-2017-3244 CVE-2017-3258 CVE-2017-3313 CVE-2017-3317 CVE-2017-3318
+  CVE-2017-3291 CVE-2017-3302 CVE-2016-5483/CVE-2017-3600 CVE-2017-3308
+  CVE-2017-3309 CVE-2017-3453 CVE-2017-3456 CVE-2017-3464
+  Resolves: #1458933
+  New deps required by upstream: checkpolicy and policycoreutils-python
+  License text removed by upstream: COPYING.LESSER
+  Do not ignore test-suite failure
+  Downstream script mariadb-prepare-db-dir fixed for CVE-2017-3265
+  Resolves: #1458940
+
+* Tue Mar 21 2017 Michal Schorm <mschorm@redhat.com> - 5.5.52-2
+- Extension of mariadb-prepare-db-dir script
+- Resolves: #1356897
+
+- Rebase to 5.5.52, that also include fix for CVE-2016-6662
+  Resolves: #1377974
+
 * Wed Sep 21 2016 Honza Horak <hhorak@redhat.com> - 5.5.52-1
 - Rebase to 5.5.52, that also include fix for CVE-2016-6662
   Resolves: #1377974
