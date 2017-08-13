@@ -14,7 +14,7 @@
 
 Name: system-mariadb
 Version: 5.5.56
-Release: 2%{?dist}
+Release: 2%{?dist}.1
 Epoch: 1
 
 Summary: A community developed branch of MySQL
@@ -745,7 +745,7 @@ rm -f ${RPM_BUILD_ROOT}%{_datadir}/mysql/solaris/postinstall-solaris
 %{_mandir}/man1/mysql_client_test.1*
 
 %changelog
-* Sat Aug 12 2017 ClearFoundation <developer@clearfoundation.com> - 1:5.5.56-2.v7
+* Sun Aug 13 2017 ClearFoundation <developer@clearfoundation.com> - 1:5.5.56-2.v7.1
 - Create sandboxed version
 
 * Thu Jun 08 2017 Honza Horak <hhorak@redhat.com> - 1:5.5.56-2

@@ -9,15 +9,11 @@
 # We use my_print_defaults which prints all options from multiple files,
 # with the more specific ones later; hence take the last match.
 get_mysql_option(){
-<<<<<<< HEAD:SOURCES/system-mariadb-prepare-db-dir
-        result=`/usr/clearos/sandbox/usr/bin/my_print_defaults "$1" | sed -n "s/^--$2=//p" | tail -n 1`
-=======
         if [ $# -ne 3 ] ; then
           echo "get_mysql_option requires 3 arguments: section option default_value"
           return
         fi
-        result=`/usr/bin/my_print_defaults "$1" | sed -n "s/^--$2=//p" | tail -n 1`
->>>>>>> c7:SOURCES/mariadb-prepare-db-dir
+        result=`/usr/clearos/sandbox/usr/bin/my_print_defaults "$1" | sed -n "s/^--$2=//p" | tail -n 1`
         if [ -z "$result" ]; then
             # if not found, use the default value
             result="$3"
@@ -129,10 +125,6 @@ if should_initialize "$datadir" ; then
 
 
     # Now create the database
-<<<<<<< HEAD:SOURCES/system-mariadb-prepare-db-dir
-    echo "Initializing MySQL database"
-    /usr/clearos/sandbox/usr/bin/mysql_install_db --datadir="$datadir" --user="$myuser"
-=======
     echo "Initializing MariaDB database"
     # Avoiding deletion of files not created by mysql_install_db is
     # guarded by time check and sleep should help work-arounded
@@ -140,8 +132,7 @@ if should_initialize "$datadir" ; then
     # https://bugzilla.redhat.com/show_bug.cgi?id=1335849#c19
     INITDB_TIMESTAMP=`LANG=C date -u`
     sleep 1
-    /usr/bin/mysql_install_db --rpm --datadir="$datadir" --user="$myuser"
->>>>>>> c7:SOURCES/mariadb-prepare-db-dir
+    /usr/clearos/sandbox/usr/bin/mysql_install_db --datadir="$datadir" --user="$myuser"
     ret=$?
     if [ $ret -ne 0 ] ; then
         echo "Initialization of MariaDB database failed." >&2
